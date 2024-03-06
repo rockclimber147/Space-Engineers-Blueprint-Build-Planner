@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag and Drop</title>
+    <style>
+        #drop-zone {
+            border: 2px dashed #ccc;
+            width: 300px;
+            height: 200px;
+            text-align: center;
+            line-height: 200px;
+            font-size: 18px;
+            margin: 0 auto;
+            margin-top: 50px;
+        }
+
+        #drop-zone.hover {
+            border-color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="drop-zone">Drop files here</div>
+    <input type="file" onchange="previewFile()" /><br />
+    <p class="content"></p>
+    <script src="script.js"></script>
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('hover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('hover');
+        });
+
+        dropZone.addEventListener('drop', (ev) => {
+            console.log("File(s) dropped");
+
+            // Prevent default behavior (Prevent file from being opened)
+            ev.preventDefault();
+
+            if (ev.dataTransfer.items) {
+                console.log("This browser supports DataTransferItemList");
+                // Use DataTransferItemList interface to access the file(s)
+                [...ev.dataTransfer.items].forEach((item, i) => {
+                    // If dropped items aren't files, reject them
+                    if (item.kind === "file") {
+                        const file = item.getAsFile();
+                        console.log(`${file.name.length}`);
+                        // if (file.name.endsWith('.sbc')) {
+                        console.log("Previewing...");
+                        previewFile(file);
+                        // }
+                    }
+                });
+            } else {
+                // Use DataTransfer interface to access the file(s)
+                [...ev.dataTransfer.files].forEach((file, i) => {
+                    console.log(`… file[${i}].name = ${file.name}`);
+                });
+            }
+        });
+
+        function previewFile(file) {
+            const reader = new FileReader();
+            if (!file) [file] = document.querySelector("input[type=file]").files;
+
+            reader.addEventListener(
+                "load",
+                () => {
+                    gridTag = "CubeGrids";
+                    parser = new DOMParser();
+                    // this will then display a text file
+                    console.log("File Text: " + reader.result);
+                    individualLines = reader.result.split("\n");
+                    // blockAmounts = new Map();
+                    for (let i = 0; i < individualLines.length; i++) {
+                        if (individualLines[i].includes("<MyObjectBuilder_CubeBlock")) {
+                            formattedBlockType = extractObjectBuilderType(individualLines[i]) + "/" + extractSubtypeName(individualLines[i + 1]);
+                            // if (blockAmounts[formattedBlockType]) {
+                            //     blockAmounts[formattedBlockType] += 1;
+                            // } else {
+                            //     blockAmounts[formattedBlockType] = 1;
+                            // }
+                            // if (!AllItemCounts[formattedBlockType]) {
+
+                            //     for (const [key, value] of Object.entries(AllItemCounts)) {
+                            //         if (key.indexOf(extractSubtypeName(individualLines[i + 1])) != -1) {
+                            //             console.log("F: " + formattedBlockType);
+                            //             console.log("S: " + extractSubtypeName(individualLines[i + 1]));
+                            //             console.log(">: " + key);
+                            //         }
+                            //     }
+                            // }
+                            AllItemCounts[formattedBlockType] += 1;
+                        }
+                    }
+                    for (const [key, value] of Object.entries(AllItemCounts)) {
+                        if (value > 0) console.log(`${key}: ${value}`);
+                    }
+                },
+                false,
+            );
+
+            if (file) {
+                reader.readAsText(file);
+            }
+        }
+        function extractObjectBuilderType(line) {
+            return line.substring(line.lastIndexOf("MyObjectBuilder_"), line.lastIndexOf(`"`));
+        }
+        function extractSubtypeName(line) {
+            return line.substring(line.indexOf(">") + 1, line.lastIndexOf(`<`));
+        }
+    </script>
+
+</body>
+
+</html>
